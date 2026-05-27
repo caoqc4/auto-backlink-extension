@@ -172,20 +172,67 @@ npm install
 npm run build
 ```
 
-Load the extension:
-
-1. Open `chrome://extensions`
-2. Enable Developer mode
-3. Click "Load unpacked"
-4. Select the generated `dist` directory
-
 For popup UI development:
 
 ```bash
 npm run dev
 ```
 
-Vite is useful for frontend development, but full extension workflows require loading the built `dist` directory in Chrome.
+Vite is useful for frontend development, but full extension workflows require Chrome extension APIs. See **Local Usage** below for loading the built extension in Chrome.
+
+## Local Usage
+
+### Install A Local Build
+
+```bash
+npm install
+npm run build
+```
+
+Then load the extension in Chrome:
+
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked**.
+4. Select the generated `dist` directory.
+
+After loading, open the extension popup or side panel from Chrome's extension toolbar.
+
+### Update A Local Build
+
+After changing code:
+
+```bash
+npm run build
+```
+
+Then go back to `chrome://extensions` and click the reload button on the Backlink Forge extension card.
+
+### Package A Zip
+
+To create a zip package from the production build:
+
+```bash
+npm run package
+```
+
+This creates:
+
+```text
+auto-backlink-extension.zip
+```
+
+The zip contains the contents of `dist/`. Use it for manual sharing, review, or Chrome Web Store upload preparation. For local development, prefer **Load unpacked** with the `dist` directory.
+
+### Local Data Notes
+
+Chrome stores extension data by extension ID, not by project folder. If you remove the extension from `chrome://extensions`, Chrome may delete its local IndexedDB and `chrome.storage` data.
+
+Recommended workflow:
+
+- Use Google Sheets sync before removing or reinstalling the extension.
+- Restore data with **Restore from Google Sheets** after loading a fresh build.
+- Do not click **Sync to Google Sheets** while local data is empty unless you intentionally want to overwrite the spreadsheet.
 
 ## Browser Permissions
 
@@ -219,8 +266,16 @@ docs/                        Product and design notes
 ```bash
 npm run dev       # Start Vite dev server
 npm run build     # Type-check and build extension into dist
+npm run package   # Build and create auto-backlink-extension.zip
 npm run preview   # Preview the Vite app
 ```
+
+## Troubleshooting
+
+- **The extension opens but all data is empty**: local data belongs to the previous extension ID or was deleted when the old extension was removed. Restore from Google Sheets if you synced before.
+- **Google OAuth fails with redirect_uri mismatch**: add `https://<extension-id>.chromiumapp.org/` to the OAuth client's authorized redirect URIs, then save and retry after a few minutes.
+- **The Vite dev page does not behave like the extension**: this is expected. Full workflows require Chrome extension APIs and should be tested by loading `dist` in Chrome.
+- **Changes are not visible after build**: reload the extension card on `chrome://extensions`.
 
 ## Open Source Hygiene
 

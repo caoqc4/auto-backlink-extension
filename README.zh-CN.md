@@ -172,20 +172,67 @@ npm install
 npm run build
 ```
 
-加载扩展：
-
-1. 打开 `chrome://extensions`
-2. 开启 Developer mode
-3. 点击 "Load unpacked"
-4. 选择生成的 `dist` 目录
-
 开发弹窗 UI：
 
 ```bash
 npm run dev
 ```
 
-Vite 只能用于调试前端界面。完整扩展能力仍需要在 Chrome 中加载构建后的 `dist` 目录。
+Vite 只能用于调试前端界面。完整扩展能力依赖 Chrome extension API，具体加载方式见下面的 **本地使用**。
+
+## 本地使用
+
+### 安装本地构建版本
+
+```bash
+npm install
+npm run build
+```
+
+然后在 Chrome 中加载扩展：
+
+1. 打开 `chrome://extensions`
+2. 开启 **开发者模式**
+3. 点击 **加载未打包的扩展程序**
+4. 选择生成的 `dist` 目录
+
+加载后，可以从 Chrome 扩展工具栏打开弹窗或侧边栏。
+
+### 更新本地构建版本
+
+修改代码后执行：
+
+```bash
+npm run build
+```
+
+然后回到 `chrome://extensions`，点击 Backlink Forge 扩展卡片上的刷新按钮。
+
+### 打包 Zip
+
+生成生产构建并打包成 zip：
+
+```bash
+npm run package
+```
+
+会生成：
+
+```text
+auto-backlink-extension.zip
+```
+
+这个 zip 包包含 `dist/` 里的内容，可用于手动分享、审核或准备上传 Chrome Web Store。本地开发时优先使用 `dist` 目录通过 **加载未打包的扩展程序** 运行。
+
+### 本地数据说明
+
+Chrome 按扩展 ID 存储扩展数据，而不是按项目文件夹存储。如果你在 `chrome://extensions` 里移除扩展，Chrome 可能会删除这个扩展 ID 对应的 IndexedDB 和 `chrome.storage` 数据。
+
+推荐流程：
+
+- 移除或重新安装扩展前，先同步到 Google Sheets。
+- 加载新构建后，用 **从 Google Sheets 恢复** 把数据恢复回来。
+- 如果本地数据为空，不要先点 **同步到 Google Sheets**，除非你明确想用空本地数据覆盖表格。
 
 ## 浏览器权限说明
 
@@ -219,8 +266,16 @@ docs/                        产品设计和补充文档
 ```bash
 npm run dev       # 启动 Vite 开发服务器
 npm run build     # 类型检查并构建扩展
+npm run package   # 构建并生成 auto-backlink-extension.zip
 npm run preview   # 预览 Vite 应用
 ```
+
+## 常见问题
+
+- **扩展能打开，但数据为空**：本地数据可能属于旧扩展 ID，或者旧扩展被移除时数据被 Chrome 删除了。如果之前同步过，请从 Google Sheets 恢复。
+- **Google OAuth 报 redirect_uri mismatch**：在 OAuth Client 中添加 `https://<extension-id>.chromiumapp.org/` 到授权重定向 URI，保存后等待几分钟再试。
+- **Vite 开发页面和真实扩展表现不一样**：这是正常的。完整功能依赖 Chrome extension API，需要加载 `dist` 目录测试。
+- **构建后看不到新改动**：回到 `chrome://extensions`，点击扩展卡片上的刷新按钮。
 
 ## 开源前检查
 
