@@ -95,6 +95,63 @@ Local IndexedDB data can be synced to the user's own Google Sheets for backup, r
 
 Data is synced only after the user configures and triggers Google Sheets sync.
 
+## Google Sheets Restore Setup
+
+Use this when you want to restore an existing synced spreadsheet into a fresh extension install.
+
+### 1. Enable Google Sheets API
+
+In Google Cloud Console, open your project and enable:
+
+```text
+Google Sheets API
+```
+
+### 2. Create Or Reuse An OAuth Client
+
+Go to:
+
+```text
+Google Cloud Console -> API & Services -> Credentials -> OAuth 2.0 Client IDs
+```
+
+Create or reuse a **Web application** OAuth client.
+
+Add the extension redirect URLs for your current unpacked extension ID:
+
+```text
+Authorized JavaScript origins:
+https://<extension-id>.chromiumapp.org
+
+Authorized redirect URIs:
+https://<extension-id>.chromiumapp.org/
+```
+
+You can find the extension ID on `chrome://extensions`.
+
+Example:
+
+```text
+https://lljkhioocjljemhdjcdfnfglgkhlppkg.chromiumapp.org
+https://lljkhioocjljemhdjcdfnfglgkhlppkg.chromiumapp.org/
+```
+
+Save the OAuth client and copy its client ID:
+
+```text
+xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
+```
+
+### 3. Restore From The Spreadsheet
+
+In the extension settings:
+
+1. Paste the Google Sheets spreadsheet ID or full spreadsheet URL.
+2. Paste the Google OAuth Client ID.
+3. Click **Restore from Google Sheets**.
+
+Do not click **Sync to Google Sheets** before restoring if the local extension data is empty, because that can overwrite the spreadsheet with empty local data.
+
 ## Privacy And Security
 
 - Data is stored locally in the browser extension environment by default.
