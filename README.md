@@ -12,6 +12,48 @@ Project profile -> Discovery -> Resource pool -> Screening -> Assisted execution
 
 The extension can analyze pages, detect forms, draft content, and help fill recognizable fields, while keeping the final submission under human control.
 
+## How The Workflow Fits Together
+
+```mermaid
+flowchart LR
+  profile[Project Profile] --> discover[Discover / Import]
+  discover --> pool[Resource Pool]
+  pool --> screen[Page Screening]
+  screen --> queue[Execution Queue]
+  queue --> assist[Assisted Draft + Fill]
+  assist --> human[Human Review + Submit]
+  human --> verify[Verify Result]
+  verify --> sync[Google Sheets Sync]
+  sync --> pool
+```
+
+The extension is organized around a repeatable loop: maintain project data, collect opportunities, screen pages, assist execution, verify results, then sync the working record. Google Sheets is optional, but recommended as a backup and review layer.
+
+```mermaid
+flowchart TB
+  subgraph ChromeExtension[Chrome Extension]
+    popup[Popup / Side Panel UI]
+    background[Service Worker]
+    content[Content Script]
+    seoBridge[SEO Page Bridge]
+    db[(IndexedDB)]
+  end
+
+  popup <--> db
+  background <--> db
+  popup <--> background
+  popup --> content
+  content --> page[Target Web Page]
+  seoBridge --> seo[Ahrefs / Semrush Pages]
+  seoBridge --> background
+  background --> sheets[Google Sheets]
+  popup --> ai[User AI Provider]
+
+  sheets -. restore / backup .-> db
+```
+
+At a high level, the popup/side panel is the operator workspace, the content script analyzes and fills the active page, the service worker coordinates background tasks, and IndexedDB is the local source of truth. External services are user-controlled: AI uses BYOK credentials, and Google Sheets sync writes only to the spreadsheet configured by the user.
+
 ## Functional Blocks
 
 ### 1. Project Profiles
