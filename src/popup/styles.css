@@ -1,0 +1,775 @@
+:root {
+  --ink: #1f2933;
+  --muted: #64717f;
+  --paper: #f7f4ed;
+  --panel: #fffdf8;
+  --line: #ddd4c5;
+  --accent: #0f766e;
+  --accent-strong: #0b5d56;
+  --warm: #c2410c;
+  --charcoal: #263238;
+  --shadow: 0 18px 40px rgba(55, 45, 32, 0.14);
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 760px;
+  min-height: 620px;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(15, 118, 110, 0.06) 1px, transparent 1px),
+    linear-gradient(rgba(15, 118, 110, 0.05) 1px, transparent 1px),
+    var(--paper);
+  background-size: 24px 24px;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.shell {
+  padding: 18px;
+}
+
+.topbar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 2px;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+h1 {
+  font-size: 27px;
+  line-height: 1.08;
+}
+
+h2 {
+  font-size: 17px;
+}
+
+.tabs {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(5, 1fr);
+  margin-bottom: 12px;
+}
+
+.tab,
+.iconButton,
+.primaryButton,
+.ghostButton,
+.fileButton {
+  align-items: center;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 7px;
+  justify-content: center;
+}
+
+.tab {
+  background: rgba(255, 253, 248, 0.72);
+  border-radius: 6px;
+  color: var(--muted);
+  min-height: 38px;
+}
+
+.tab.active {
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+  color: #fffdf8;
+}
+
+.iconButton {
+  background: var(--panel);
+  border-radius: 6px;
+  height: 36px;
+  width: 36px;
+}
+
+.panelStack {
+  display: grid;
+  gap: 12px;
+}
+
+.section {
+  background: rgba(255, 253, 248, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.sectionHeader {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.sectionHint {
+  margin: -4px 0 10px;
+}
+
+.metricGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.metric {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  min-height: 100px;
+  padding: 12px;
+}
+
+.compactMetrics .metric {
+  min-height: 76px;
+  padding: 10px;
+}
+
+.executionMetrics {
+  grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
+}
+
+.classSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -2px 0 10px;
+}
+
+.classSummary button {
+  background: #efe8d9;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.classSummary button.active {
+  background: #e7f3ef;
+  border-color: #7fb4a9;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.metricIcon {
+  color: var(--accent);
+}
+
+.metric span,
+.metric small,
+.sourceMeta,
+.projectRow span,
+.stackedField span,
+.stackedField small,
+.fieldGuide span,
+.badge span,
+.empty,
+.bodyCopy,
+.sectionHint,
+.notice {
+  color: var(--muted);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
+}
+
+.stackedField small {
+  line-height: 1.45;
+}
+
+.fieldGuide strong {
+  font-size: 13px;
+}
+
+.metric strong {
+  font-size: 28px;
+}
+
+.metric small {
+  line-height: 1.35;
+}
+
+.twoCol {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.miniList {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.miniList li {
+  border-top: 1px solid var(--line);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
+  padding: 8px 0;
+}
+
+.primaryButton,
+.ghostButton,
+.fileButton {
+  border-radius: 6px;
+  min-height: 34px;
+  padding: 0 11px;
+}
+
+.primaryButton {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.primaryButton:disabled {
+  cursor: progress;
+  opacity: 0.68;
+}
+
+.ghostButton:disabled {
+  cursor: progress;
+  opacity: 0.62;
+}
+
+.primaryButton.warm {
+  background: var(--warm);
+  border-color: var(--warm);
+}
+
+.ghostButton,
+.fileButton {
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.ghostButton.danger {
+  color: #a33a2b;
+}
+
+.fileButton input {
+  display: none;
+}
+
+.formGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.syncGrid {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+}
+
+.syncActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.wideNotice {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+.syncMeta {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.fieldGuide {
+  background: #eef7f4;
+  border: 1px solid #b8d7cf;
+  border-radius: 7px;
+  display: grid;
+  gap: 3px;
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.stackedField {
+  display: grid;
+  gap: 5px;
+}
+
+.stackedField.wide {
+  grid-column: 1 / -1;
+}
+
+input,
+textarea,
+select {
+  background: #fffaf0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  outline: none;
+  padding: 8px 9px;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.projectList,
+.sourceList {
+  display: grid;
+  gap: 8px;
+}
+
+.projectRow,
+.sourceRow {
+  align-items: center;
+  background: #fffaf0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  display: flex;
+  gap: 10px;
+  padding: 9px;
+}
+
+.sourceCard {
+  display: grid;
+  gap: 6px;
+}
+
+.checkLogList {
+  display: grid;
+  gap: 7px;
+}
+
+.checkLogRow {
+  background: #fffaf0;
+  border: 1px solid var(--line);
+  border-left: 4px solid #a8a29e;
+  border-radius: 7px;
+  display: grid;
+  gap: 5px;
+  padding: 8px 10px;
+}
+
+.checkLogRow.candidate {
+  border-left-color: #0f766e;
+}
+
+.checkLogRow.skip {
+  border-left-color: #b45309;
+}
+
+.checkLogRow.error {
+  border-left-color: #b91c1c;
+}
+
+.checkLogRow > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.checkLogRow strong {
+  color: var(--text);
+}
+
+.checkLogRow span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.currentPageBox {
+  background: #fffaf0;
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+}
+
+.currentPageBox strong {
+  color: var(--text);
+}
+
+.currentPageBox small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectRow {
+  justify-content: space-between;
+}
+
+.projectRow div,
+.sourceMain {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sourceMain {
+  flex: 1;
+}
+
+.sourceMain span,
+.projectRow span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.priority {
+  align-items: center;
+  border-radius: 5px;
+  color: white;
+  display: flex;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 900;
+  height: 31px;
+  justify-content: center;
+  width: 31px;
+}
+
+.pA { background: #0f766e; }
+.pB { background: #2563eb; }
+.pC { background: #a16207; }
+.pD { background: #6b7280; }
+.pX { background: #991b1b; }
+
+.sourceMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-end;
+  max-width: 240px;
+}
+
+.sourceMeta span {
+  background: #efe6d6;
+  border-radius: 999px;
+  padding: 3px 7px;
+}
+
+.sourceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.actionBands {
+  display: grid;
+  gap: 12px;
+}
+
+.actionBand {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.actionBand:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.actionBand > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.actionBand strong {
+  color: var(--ink);
+}
+
+.actionBand small {
+  color: var(--muted);
+}
+
+.discoveryToolbar {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.discoveryTabs {
+  margin: 0;
+}
+
+.discoverySection .sourceRow {
+  align-items: flex-start;
+}
+
+.discoverySection .sourceMeta {
+  max-width: 360px;
+}
+
+.discoverySection .sourceActions {
+  justify-content: flex-end;
+  min-width: 145px;
+}
+
+.ghostButton.tiny {
+  font-size: 12px;
+  min-height: 28px;
+  padding: 0 8px;
+}
+
+.pageList {
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  display: grid;
+  gap: 5px;
+  padding: 7px;
+}
+
+.pageList.scrollable {
+  max-height: 220px;
+  overflow: auto;
+}
+
+.pageRow {
+  align-items: center;
+  background: #fffaf0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-height: 30px;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.pageRow.actionRow {
+  cursor: default;
+  padding: 5px;
+}
+
+.pageRow.actionRow > button:first-child {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0 4px;
+  text-align: left;
+}
+
+.pageRow span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pageRow strong {
+  color: var(--muted);
+  flex: none;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.toolbar {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr repeat(5, auto);
+}
+
+.sourceToolbar {
+  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.sourceToolbar .inputWithIcon {
+  flex: 1 1 280px;
+  min-width: 240px;
+}
+
+.sourceToolbar .ghostButton,
+.sourceToolbar .primaryButton,
+.sourceToolbar .fileButton {
+  flex: 0 0 auto;
+}
+
+.compactToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.executionFlow {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.flowBlock {
+  background: #fffaf0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+}
+
+.flowBlock > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.flowBlock small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.primaryFlow {
+  border-left: 4px solid var(--accent);
+}
+
+.inputWithIcon {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+}
+
+.inputWithIcon svg {
+  color: var(--accent);
+  flex: none;
+}
+
+.inputWithIcon.small {
+  max-width: 240px;
+}
+
+.statsExplainer {
+  background: #eef7f4;
+  border: 1px solid #b8d7cf;
+  border-radius: 7px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 8px 10px;
+}
+
+.filterCluster {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.filterCluster select {
+  min-width: 132px;
+}
+
+.analysisGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.badge {
+  background: #fffaf0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  display: grid;
+  gap: 5px;
+  padding: 9px;
+}
+
+.badge strong {
+  font-size: 15px;
+}
+
+.notice {
+  background: #e7f3ef;
+  border: 1px solid #9bc7bc;
+  border-radius: 7px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+}
+
+.inlineNotice,
+.fieldNotice {
+  background: #e7f3ef;
+  border: 1px solid #9bc7bc;
+  border-radius: 7px;
+  color: #315d55;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 7px 9px;
+}
+
+.fieldNotice {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.callout {
+  align-items: center;
+  background: #fff4de;
+  border: 1px solid #ebc47f;
+  border-radius: 7px;
+  display: flex;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 10px;
+}

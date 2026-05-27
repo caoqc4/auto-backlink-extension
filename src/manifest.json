@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Backlink Forge",
+  "version": "0.1.0",
+  "description": "Collect, classify, and semi-automate backlink building workflows.",
+  "action": {
+    "default_title": "Backlink Forge",
+    "default_popup": "src/popup/index.html"
+  },
+  "side_panel": {
+    "default_path": "src/popup/index.html"
+  },
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://ahrefs.com/*", "https://*.ahrefs.com/*", "https://www.semrush.com/*", "https://*.semrush.com/*"],
+      "js": ["assets/seoBridge.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "permissions": ["activeTab", "storage", "tabs", "scripting", "webRequest", "sidePanel", "identity", "alarms"],
+  "host_permissions": ["<all_urls>", "https://www.googleapis.com/*", "https://sheets.googleapis.com/*"]
+}
