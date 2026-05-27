@@ -14,42 +14,55 @@ The extension can analyze pages, detect forms, draft content, and help fill reco
 
 ## How The Workflow Fits Together
 
-```mermaid
-flowchart LR
-  profile[Project Profile] --> discover[Discover / Import]
-  discover --> pool[Resource Pool]
-  pool --> screen[Page Screening]
-  screen --> queue[Execution Queue]
-  queue --> assist[Assisted Draft + Fill]
-  assist --> human[Human Review + Submit]
-  human --> verify[Verify Result]
-  verify --> sync[Google Sheets Sync]
-  sync --> pool
+```text
+Backlink Forge workflow
+
+1. Project Profile
+   Store brand, URL, descriptions, keywords, contact info.
+
+2. Discovery / Import
+   Collect opportunities from Ahrefs, Semrush, files, or the current page.
+
+3. Resource Pool
+   Deduplicate domains, classify opportunity types, and assign priority.
+
+4. Page Screening
+   Detect forms, login/register gates, captcha, existing links, and rel values.
+
+5. Assisted Execution
+   Generate drafts, fill recognizable fields, and leave final submit to the user.
+
+6. Tracking + Sync
+   Record status, verify results, and optionally back up to Google Sheets.
 ```
 
 The extension is organized around a repeatable loop: maintain project data, collect opportunities, screen pages, assist execution, verify results, then sync the working record. Google Sheets is optional, but recommended as a backup and review layer.
 
-```mermaid
-flowchart TB
-  subgraph ChromeExtension[Chrome Extension]
-    popup[Popup / Side Panel UI]
-    background[Service Worker]
-    content[Content Script]
-    seoBridge[SEO Page Bridge]
-    db[(IndexedDB)]
-  end
+```text
+Product structure
 
-  popup <--> db
-  background <--> db
-  popup <--> background
-  popup --> content
-  content --> page[Target Web Page]
-  seoBridge --> seo[Ahrefs / Semrush Pages]
-  seoBridge --> background
-  background --> sheets[Google Sheets]
-  popup --> ai[User AI Provider]
+Chrome extension
+├─ Popup / Side Panel UI
+│  ├─ project setup
+│  ├─ resource pool
+│  ├─ execution queue
+│  └─ settings, AI, Google Sheets sync
+├─ Content Script
+│  ├─ page analysis
+│  └─ assisted form filling
+├─ Service Worker
+│  ├─ background screening
+│  ├─ SEO result capture
+│  └─ sync scheduling
+└─ Local IndexedDB
+   ├─ projects, sources, pages
+   ├─ submissions, imports, check logs
+   └─ discovery targets
 
-  sheets -. restore / backup .-> db
+External services
+├─ Google Sheets: optional backup and restore
+├─ AI provider: BYOK draft generation
+└─ Ahrefs / Semrush: backlink source discovery
 ```
 
 At a high level, the popup/side panel is the operator workspace, the content script analyzes and fills the active page, the service worker coordinates background tasks, and IndexedDB is the local source of truth. External services are user-controlled: AI uses BYOK credentials, and Google Sheets sync writes only to the spreadsheet configured by the user.
