@@ -220,6 +220,7 @@ export interface CheckLog {
 
 export interface AppSettings {
   id: "settings";
+  uiLanguage: "zh-CN" | "en";
   aiProvider: "none" | "openai" | "gemini" | "openrouter" | "deepseek";
   aiApiKey: string;
   aiModel: string;

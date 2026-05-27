@@ -56,6 +56,7 @@ import {
   type ExecutionResourceClass
 } from "../shared/executionClassification";
 import { extractSpreadsheetId, restoreLocalDataFromGoogleSheets, syncLocalDataToGoogleSheets } from "../shared/googleSheets";
+import { translateUi, type UiLanguage } from "./i18n";
 import type {
   BacklinkCategory,
   BacklinkSource,
@@ -76,6 +77,12 @@ import "./styles.css";
 
 type TabKey = "dashboard" | "projects" | "sources" | "execute" | "settings";
 type CommentLinkMode = "auto_recommend" | "none" | "website_field" | "body_html_anchor" | "body_bbcode_link";
+
+let activeUiLanguage: UiLanguage = "zh-CN";
+
+function t(value: string) {
+  return translateUi(value, activeUiLanguage);
+}
 
 interface PageContext {
   title: string;
@@ -126,6 +133,7 @@ type ResourcePoolModel = ReturnType<typeof buildResourcePoolModel>;
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
+  const [uiLanguage, setUiLanguage] = useState<UiLanguage>("zh-CN");
   const [projects, setProjects] = useState<Project[]>([]);
   const [sources, setSources] = useState<BacklinkSource[]>([]);
   const [pages, setPages] = useState<BacklinkPage[]>([]);
@@ -137,6 +145,7 @@ function App() {
   const [analysis, setAnalysis] = useState<PageAnalysis | null>(null);
   const [notice, setNotice] = useState("");
 
+  activeUiLanguage = uiLanguage;
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? projects[0];
 
   async function refresh() {
@@ -163,6 +172,7 @@ function App() {
 
   useEffect(() => {
     void refresh();
+    void getSettings().then((settings) => setUiLanguage(settings.uiLanguage));
   }, []);
 
   const resourcePool = useMemo(() => buildResourcePoolModel(sources, pages), [sources, pages]);
@@ -190,16 +200,16 @@ function App() {
       <header className="topbar">
         <div>
           <p className="eyebrow">Backlink Forge</p>
-          <h1>外链工作台</h1>
+          <h1>{t("外链工作台")}</h1>
         </div>
         <div className="headerActions">
-          <button className="iconButton" onClick={() => void openSidePanel()} title="打开侧边栏">
+          <button className="iconButton" onClick={() => void openSidePanel()} title={t("打开侧边栏")}>
             <MousePointerClick size={17} />
           </button>
-          <button className="iconButton" onClick={() => openWorkbenchTab()} title="打开常驻工作台">
+          <button className="iconButton" onClick={() => openWorkbenchTab()} title={t("打开常驻工作台")}>
             <ArrowUpRight size={17} />
           </button>
-          <button className="iconButton" onClick={() => void refresh()} title="刷新">
+          <button className="iconButton" onClick={() => void refresh()} title={t("刷新")}>
             <RefreshCcw size={17} />
           </button>
         </div>
@@ -252,7 +262,7 @@ function App() {
           onSaved={() => void refresh()}
         />
       )}
-      {activeTab === "settings" && <SettingsPanel onSaved={() => void refresh()} />}
+      {activeTab === "settings" && <SettingsPanel uiLanguage={uiLanguage} onLanguageChange={setUiLanguage} onSaved={() => void refresh()} />}
     </main>
   );
 }
@@ -261,7 +271,7 @@ function TabButton(props: { active: boolean; icon: React.ReactNode; label: strin
   return (
     <button className={props.active ? "tab active" : "tab"} onClick={props.onClick}>
       {props.icon}
-      <span>{props.label}</span>
+      <span>{t(props.label)}</span>
     </button>
   );
 }
@@ -361,18 +371,18 @@ function Dashboard(props: {
       </div>
       <section className="section">
         <div className="sectionHeader">
-          <h2>优先资源</h2>
-          <span>{topItems.length} 条</span>
+          <h2>{t("优先资源")}</h2>
+          <span>{topItems.length} {t("条")}</span>
         </div>
         <SourceList items={topItems} compact />
       </section>
       <section className="section twoCol">
         <div>
-          <h2>最近导入</h2>
-          <MiniList items={props.imports.slice(0, 4).map((item) => `${item.label || item.source}: ${item.createdCount} 条`)} />
+          <h2>{t("最近导入")}</h2>
+          <MiniList items={props.imports.slice(0, 4).map((item) => `${item.label || item.source}: ${item.createdCount} ${t("条")}`)} />
         </div>
         <div>
-          <h2>最近提交</h2>
+          <h2>{t("最近提交")}</h2>
           <MiniList items={props.submissions.slice(0, 4).map((item) => `${item.targetDomain} · ${item.status}`)} />
         </div>
       </section>
@@ -384,24 +394,24 @@ function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: 
   return (
     <div className="metric">
       <div className="metricIcon">{icon}</div>
-      <span>{label}</span>
+      <span>{t(label)}</span>
       <strong>{value}</strong>
-      {detail && <small>{detail}</small>}
+      {detail && <small>{t(detail)}</small>}
     </div>
   );
 }
 
 function ResourceStatsExplainer({ stats, latestImport }: { stats: ResourcePoolModel["stats"]; latestImport?: ImportBatch }) {
   const importLine = latestImport
-    ? `最近导入：${latestImport.label || latestImport.source}，读取 ${latestImport.rowCount} 行，新增 ${latestImport.createdCount} 个域名，合并更新 ${latestImport.updatedCount} 个域名。`
-    : "最近导入：暂无。";
+    ? `${t("最近导入")}：${latestImport.label || latestImport.source}，读取 ${latestImport.rowCount} 行，新增 ${latestImport.createdCount} 个域名，合并更新 ${latestImport.updatedCount} 个域名。`
+    : `${t("最近导入")}：${t("暂无数据")}。`;
   return (
     <p className="sectionHint statsExplainer">
       {importLine}
-      {" "}整理好的 XLSX 会直接标记为已分析资源，所以通常会增加“可执行候选”，不一定增加“待预检测”。
-      总域名 {stats.totalDomains} = 已排除 {stats.excludedDomains} + 未排除 {stats.activeDomains}；
-      未排除 {stats.activeDomains} = 待检测 {stats.pendingDetection} + 待二检 {stats.secondReviewDomains} + 可执行 {stats.passedDetection}。
-      已排除记录仍保留，用于审计和防重复导入。
+      {" "}
+      {activeUiLanguage === "en"
+        ? `Cleaned XLSX imports are marked as analyzed resources, so they usually increase actionable candidates rather than pending prechecks. Total domains ${stats.totalDomains} = excluded ${stats.excludedDomains} + active ${stats.activeDomains}; active ${stats.activeDomains} = pending ${stats.pendingDetection} + review ${stats.secondReviewDomains} + actionable ${stats.passedDetection}. Excluded records are kept for audit and deduplication.`
+        : `整理好的 XLSX 会直接标记为已分析资源，所以通常会增加“可执行候选”，不一定增加“待预检测”。总域名 ${stats.totalDomains} = 已排除 ${stats.excludedDomains} + 未排除 ${stats.activeDomains}；未排除 ${stats.activeDomains} = 待检测 ${stats.pendingDetection} + 待二检 ${stats.secondReviewDomains} + 可执行 ${stats.passedDetection}。已排除记录仍保留，用于审计和防重复导入。`}
     </p>
   );
 }
@@ -410,7 +420,7 @@ function MiniList({ items }: { items: string[] }) {
   return items.length ? (
     <ul className="miniList">{items.map((item) => <li key={item}>{item}</li>)}</ul>
   ) : (
-    <p className="empty">暂无数据</p>
+    <p className="empty">{t("暂无数据")}</p>
   );
 }
 
@@ -446,14 +456,14 @@ function ProjectsPanel({ projects, onSaved }: { projects: Project[]; onSaved: ()
     <section className="panelStack">
       <section className="section">
         <div className="sectionHeader">
-          <h2>新增项目</h2>
+          <h2>{t("新增项目")}</h2>
           <button className="primaryButton" onClick={() => void save()}>
-            <Plus size={16} /> 保存
+            <Plus size={16} /> {t("保存")}
           </button>
         </div>
         <div className="fieldGuide">
-          <strong>字段用途</strong>
-          <span>这些资料会同时用于外链平台表单、AI 生成评论/描述时的参考，以及你自己的项目管理记录。</span>
+          <strong>{t("字段用途")}</strong>
+          <span>{t("这些资料会同时用于外链平台表单、AI 生成评论/描述时的参考，以及你自己的项目管理记录。")}</span>
         </div>
         <div className="formGrid">
           <Field label="项目名" help="内部管理用，通常不提交给外链平台。" value={draft.projectName} onChange={(value) => setDraft({ ...draft, projectName: value })} />
@@ -469,7 +479,7 @@ function ProjectsPanel({ projects, onSaved }: { projects: Project[]; onSaved: ()
         </div>
       </section>
       <section className="section">
-        <h2>项目库</h2>
+        <h2>{t("项目库")}</h2>
         <div className="projectList">
           {projects.map((project) => (
             <article className="projectRow" key={project.id}>
@@ -477,10 +487,10 @@ function ProjectsPanel({ projects, onSaved }: { projects: Project[]; onSaved: ()
                 <strong>{project.projectName || project.brandName}</strong>
                 <span>{project.siteUrl}</span>
               </div>
-              <button className="ghostButton" onClick={() => editProject(project)}>编辑</button>
+              <button className="ghostButton" onClick={() => editProject(project)}>{t("编辑")}</button>
             </article>
           ))}
-          {!projects.length && <p className="empty">先添加一个要推广的网站。</p>}
+          {!projects.length && <p className="empty">{t("先添加一个要推广的网站。")}</p>}
         </div>
       </section>
     </section>
@@ -654,60 +664,60 @@ function SourcesPanel({
     <section className="panelStack">
       <section className="section">
         <div className="sectionHeader">
-          <h2>收集外链资源</h2>
+          <h2>{t("收集外链资源")}</h2>
           <button className="ghostButton" onClick={() => void exportSources()}>
-            <FileDown size={16} /> 导出
+            <FileDown size={16} /> {t("导出")}
           </button>
         </div>
         <div className="actionBands">
           <div className="actionBand">
             <div>
-              <strong>拓展外链数据</strong>
-              <small>打开 Ahrefs/Semrush 或导入 SEO 结果，用来补 DR、流量、引用域和新资源。</small>
+              <strong>{t("拓展外链数据")}</strong>
+              <small>{t("打开 Ahrefs/Semrush 或导入 SEO 结果，用来补 DR、流量、引用域和新资源。")}</small>
             </div>
             <div className="toolbar sourceToolbar">
               <div className="inputWithIcon">
                 <Globe2 size={16} />
-                <input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="输入竞品域名，如 example.com" />
+                <input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder={t("输入竞品域名，如 example.com")} />
               </div>
               <button className="primaryButton" onClick={openAhrefs}>
-                <ArrowUpRight size={16} /> 打开 Ahrefs
+                <ArrowUpRight size={16} /> {t("打开 Ahrefs")}
               </button>
               <button className="ghostButton" onClick={openSemrush}>
-                <ArrowUpRight size={16} /> 打开 Semrush
+                <ArrowUpRight size={16} /> {t("打开 Semrush")}
               </button>
               <button className="ghostButton" onClick={() => void scrapeCurrentPage(onImported)}>
-                <Activity size={16} /> 导入当前页面外链结果
+                <Activity size={16} /> {t("导入当前页面外链结果")}
               </button>
               <button className="ghostButton" onClick={() => void expandNextDiscoveryTarget("ahrefs")}>
-                <ArrowUpRight size={16} /> 拓展下个域名外链 Ahrefs
+                <ArrowUpRight size={16} /> {t("拓展下个域名外链 Ahrefs")}
               </button>
               <button className="ghostButton" onClick={() => void expandNextDiscoveryTarget("semrush")}>
-                <ArrowUpRight size={16} /> 拓展下个域名外链 Semrush
+                <ArrowUpRight size={16} /> {t("拓展下个域名外链 Semrush")}
               </button>
               <button className="ghostButton" onClick={() => void enrichDiscoveryTargets()}>
-                <Radar size={16} /> 补充域名年龄
+                <Radar size={16} /> {t("补充域名年龄")}
               </button>
             </div>
           </div>
           <div className="actionBand">
             <div>
-              <strong>资源预检测</strong>
-              <small>自动打开候选资源页，判断是否可留言、注册、提交；当前页可手动保留或跳过。</small>
+              <strong>{t("资源预检测")}</strong>
+              <small>{t("自动打开候选资源页，判断是否可留言、注册、提交；当前页可手动保留或跳过。")}</small>
             </div>
             <div className="toolbar sourceToolbar">
               <button className={autoScreenState?.running ? "ghostButton danger" : "ghostButton"} onClick={() => void togglePrecheck()}>
-                <Radar size={16} /> {autoScreenState?.running ? "关闭资源预检测" : "连续资源预检测"}
+                <Radar size={16} /> {t(autoScreenState?.running ? "关闭资源预检测" : "连续资源预检测")}
               </button>
               <button className="ghostButton" onClick={() => void precheckNextResource()}>
-                <Activity size={16} /> 预检测下一条
+                <Activity size={16} /> {t("预检测下一条")}
               </button>
-              <button className="ghostButton" onClick={() => void keepActiveResourcePage("page")}>保留页面</button>
-              <button className="ghostButton" onClick={() => void keepActiveResourcePage("domain")}>保留域名</button>
-              <button className="ghostButton danger" onClick={() => void skipActiveResourcePage("page")}>跳过页面</button>
-              <button className="ghostButton danger" onClick={() => void skipActiveResourcePage("domain")}>跳过域名</button>
+              <button className="ghostButton" onClick={() => void keepActiveResourcePage("page")}>{t("保留页面")}</button>
+              <button className="ghostButton" onClick={() => void keepActiveResourcePage("domain")}>{t("保留域名")}</button>
+              <button className="ghostButton danger" onClick={() => void skipActiveResourcePage("page")}>{t("跳过页面")}</button>
+              <button className="ghostButton danger" onClick={() => void skipActiveResourcePage("domain")}>{t("跳过域名")}</button>
               <label className="fileButton">
-                <FileUp size={16} /> 导入 CSV/JSON/XLSX
+                <FileUp size={16} /> {t("导入 CSV/JSON/XLSX")}
                 <input
                   type="file"
                   accept=".csv,.json,.xlsx,.xls"
@@ -718,21 +728,21 @@ function SourcesPanel({
                 />
               </label>
               <button className="ghostButton danger" onClick={() => void clearSources()}>
-                清空资源池
+                {t("清空资源池")}
               </button>
             </div>
-            {isHttpUrl(activeTabUrl) && <small>当前活动页：{rootDomainFromUrl(activeTabUrl)}</small>}
+            {isHttpUrl(activeTabUrl) && <small>{t("当前活动页：")}{rootDomainFromUrl(activeTabUrl)}</small>}
           </div>
         </div>
         {autoScreenState?.message && !isBackgroundSyncMessage(autoScreenState.message) && (
           <p className="sectionHint">
-            后台状态：{autoScreenState.message}
+            {t("后台状态：")}{autoScreenState.message}
             {autoScreenState.running ? ` · 已检查 ${autoScreenState.checked} · 已跳过 ${autoScreenState.skipped}` : ""}
           </p>
         )}
         {seoCaptureStatus?.message && (
           <p className="sectionHint">
-            SEO 结果：{seoCaptureStatus.message}
+            {t("SEO 结果：")}{seoCaptureStatus.message}
             {seoCaptureStatus.competitorDomain ? ` · ${seoCaptureStatus.competitorDomain}` : ""}
             {seoCaptureStatus.requestLabel ? ` · ${seoCaptureStatus.requestLabel}` : ""}
             {seoCaptureStatus.status === "imported" ? ` · 新增 ${seoCaptureStatus.createdCount} 域名 / ${seoCaptureStatus.pageCreatedCount} 页面` : ""}
@@ -752,19 +762,19 @@ function SourcesPanel({
       {!prioritizeCheckLog && <CheckLogPanel logs={checkLogs.slice(0, 10)} totalCount={checkLogs.length} />}
       <section className="section">
         <div className="sectionHeader">
-          <h2>资源池</h2>
+          <h2>{t("资源池")}</h2>
           <div className="filterCluster">
             <span>{filtered.length ? `${(currentPage - 1) * pageSize + 1}-${(currentPage - 1) * pageSize + visibleItems.length} / ${filtered.length}` : "0 / 0"}</span>
             <select value={opportunityFilter} onChange={(event) => setOpportunityFilter(event.target.value as OpportunityFilter)}>
-              <option value="all">全部机会</option>
-              <option value="direct">可直接发外链</option>
-              <option value="review">需人工判断</option>
-              <option value="engage">低价值互动</option>
-              <option value="skip">跳过</option>
+              <option value="all">{t("全部机会")}</option>
+              <option value="direct">{t("可直接发外链")}</option>
+              <option value="review">{t("人工判断")}</option>
+              <option value="engage">{t("低价值互动")}</option>
+              <option value="skip">{t("跳过")}</option>
             </select>
             <div className="inputWithIcon small">
               <Search size={15} />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="过滤资源" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("搜索域名、URL、类型")} />
             </div>
           </div>
         </div>
@@ -773,11 +783,11 @@ function SourcesPanel({
         {filtered.length > pageSize && (
           <div className="toolbar">
             <button className="ghostButton" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
-              上一页
+              {t("上一页")}
             </button>
-            <span>第 {currentPage} / {totalPages} 页</span>
+            <span>{t("第")} {currentPage} / {totalPages}</span>
             <button className="ghostButton" disabled={currentPage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
-              下一页
+              {t("下一页")}
             </button>
           </div>
         )}
@@ -810,7 +820,7 @@ function SourceList({
       searchText: ""
     };
   });
-  if (!listItems.length) return <p className="empty">暂无资源。</p>;
+  if (!listItems.length) return <p className="empty">{activeUiLanguage === "en" ? "No resources yet." : "暂无资源。"}</p>;
   return (
     <div className={compact ? "sourceList compact" : "sourceList"}>
       {listItems.map((item) => {
@@ -835,9 +845,9 @@ function SourceList({
               </div>
               {!compact && (
                 <div className="sourceActions">
-                  <button className="ghostButton tiny" disabled={isSearchArtifact} onClick={() => openBestPageFromPages(source, sourcePages)}>打开</button>
+                  <button className="ghostButton tiny" disabled={isSearchArtifact} onClick={() => openBestPageFromPages(source, sourcePages)}>{t("打开")}</button>
                   <button className="ghostButton tiny" onClick={() => setExpandedSourceId(expandedSourceId === source.id ? "" : source.id)}>
-                    页面
+                    {t("页面")}
                   </button>
                 </div>
               )}
@@ -870,10 +880,10 @@ function CheckLogPanel({ logs, totalCount }: { logs: CheckLog[]; totalCount: num
   return (
     <section className="section">
       <div className="sectionHeader">
-        <h2>检测流水</h2>
-        <span>{logs.length ? `最近 ${logs.length} 条 / 本地保留 ${totalCount} 条` : "暂无记录"}</span>
+        <h2>{activeUiLanguage === "en" ? "Check Log" : "检测流水"}</h2>
+        <span>{logs.length ? (activeUiLanguage === "en" ? `Recent ${logs.length} / local ${totalCount}` : `最近 ${logs.length} 条 / 本地保留 ${totalCount} 条`) : t("暂无数据")}</span>
       </div>
-      <p className="sectionHint">这里固定展示最近 10 条后台检测记录；候选域名按 root domain 去重，不代表本轮新增页面数。</p>
+      <p className="sectionHint">{activeUiLanguage === "en" ? "Shows the latest 10 background checks. Candidate domains are deduplicated by root domain." : "这里固定展示最近 10 条后台检测记录；候选域名按 root domain 去重，不代表本轮新增页面数。"}</p>
       <div className="checkLogList">
         {logs.map((log) => (
           <article className={`checkLogRow ${log.result}`} key={log.id}>
@@ -882,8 +892,8 @@ function CheckLogPanel({ logs, totalCount }: { logs: CheckLog[]; totalCount: num
               <span>{formatTime(log.checkedAt)} · {log.sourceRootDomain}{log.finalRootDomain && log.finalRootDomain !== log.sourceRootDomain ? ` -> ${log.finalRootDomain}` : ""}</span>
             </div>
             <div>
-              <span>候选：{truncate(log.queuedUrl, 78)}</span>
-              <span>落地：{truncate(log.finalUrl, 78)}</span>
+              <span>{activeUiLanguage === "en" ? "Queued: " : "候选："}{truncate(log.queuedUrl, 78)}</span>
+              <span>{activeUiLanguage === "en" ? "Final: " : "落地："}{truncate(log.finalUrl, 78)}</span>
             </div>
             <div>
               <span>{log.reason}</span>
@@ -891,7 +901,7 @@ function CheckLogPanel({ logs, totalCount }: { logs: CheckLog[]; totalCount: num
             </div>
           </article>
         ))}
-        {!logs.length && <p className="empty">启动资源预检测后，这里会显示后台实际检查过的页面。</p>}
+        {!logs.length && <p className="empty">{activeUiLanguage === "en" ? "After starting resource precheck, checked pages will appear here." : "启动资源预检测后，这里会显示后台实际检查过的页面。"}</p>}
       </div>
     </section>
   );
@@ -922,10 +932,10 @@ function ExecutionQueue(props: {
   return (
     <section className="section">
       <div className="sectionHeader">
-        <h2>待执行候选资源</h2>
-        <span>{actionable.length} 个域名 · {actionablePageCount} 个页面{hiddenForProjectCount ? ` · 本项目已处理 ${hiddenForProjectCount}` : ""}</span>
+        <h2>{activeUiLanguage === "en" ? "Execution Candidates" : "待执行候选资源"}</h2>
+        <span>{activeUiLanguage === "en" ? `${actionable.length} domains · ${actionablePageCount} pages${hiddenForProjectCount ? ` · processed ${hiddenForProjectCount}` : ""}` : `${actionable.length} 个域名 · ${actionablePageCount} 个页面${hiddenForProjectCount ? ` · 本项目已处理 ${hiddenForProjectCount}` : ""}`}</span>
       </div>
-      <p className="sectionHint">这里展示当前执行模式下的候选域名；全量人工队列包含待二检和可执行，只跑可执行则只显示机器已确认可处理的页面。</p>
+      <p className="sectionHint">{activeUiLanguage === "en" ? "Shows candidate domains for the current execution mode. Full review includes second-review items; actionable-only shows machine-confirmed pages." : "这里展示当前执行模式下的候选域名；全量人工队列包含待二检和可执行，只跑可执行则只显示机器已确认可处理的页面。"}</p>
       <div className="sourceList compact">
         {actionable.map(({ source, opportunity, pages: sourcePages, summaryLabel, url }) => {
           return (
@@ -937,24 +947,24 @@ function ExecutionQueue(props: {
                   <span>{source.sourceUrl}</span>
                 </div>
                 <div className="sourceMeta">
-                  <span>{sourcePassedDetectionFromPages(source, sourcePages, opportunity) ? "可执行" : "待二检"}</span>
-                  <span>{opportunity.label}</span>
+                  <span>{t(sourcePassedDetectionFromPages(source, sourcePages, opportunity) ? "可执行" : "待二检")}</span>
+                  <span>{t(opportunity.label)}</span>
                   <span>{summaryLabel}</span>
                   <span>{executionClassDisplayLabel(source, sourcePages)}</span>
                   <span>{labelForType(source.sourceType)}</span>
                 </div>
                 <div className="sourceActions">
-                  <button className="ghostButton tiny" onClick={() => void props.onAnalyzeItem({ source, opportunity, url })}>分析</button>
-                  <button className="ghostButton tiny" onClick={() => openBestPageFromPages(source, sourcePages)}>打开</button>
-                  <button className="ghostButton tiny" onClick={() => openUrl(source.sourceUrl, true)}>来源</button>
+                  <button className="ghostButton tiny" onClick={() => void props.onAnalyzeItem({ source, opportunity, url })}>{t("分析")}</button>
+                  <button className="ghostButton tiny" onClick={() => openBestPageFromPages(source, sourcePages)}>{t("打开")}</button>
+                  <button className="ghostButton tiny" onClick={() => openUrl(source.sourceUrl, true)}>{t("来源")}</button>
                   <button className="ghostButton tiny" onClick={() => setExpandedSourceId(expandedSourceId === source.id ? "" : source.id)}>
-                    页面
+                    {t("页面")}
                   </button>
                   <button className="ghostButton tiny" onClick={() => void keepSource(source, props.onSaved, props.onNotice, "Manually kept from execution queue")}>
-                    保留
+                    {t("保留")}
                   </button>
                   <button className="ghostButton tiny" onClick={() => void skipSource(source, props.pages, props.onSaved, props.onNotice)}>
-                    跳过
+                    {t("跳过")}
                   </button>
                 </div>
               </div>
@@ -964,18 +974,18 @@ function ExecutionQueue(props: {
                     <div className="pageRow actionRow" key={page.id}>
                       <button onClick={() => openUrl(page.pageUrl, true)}>
                         <span>{pageLabel(page)}</span>
-                        <strong>{page.opportunity} · 出现 {pageEvidenceCount(page)}</strong>
+                        <strong>{t(page.opportunity)} · {activeUiLanguage === "en" ? "seen" : "出现"} {pageEvidenceCount(page)}</strong>
                       </button>
-                      <button className="ghostButton tiny" onClick={() => void keepPage(page, props.sources, props.onSaved, props.onNotice, "Manually kept page from execution queue")}>保留</button>
-                      <button className="ghostButton tiny" onClick={() => void skipPageUrl(page.pageUrl, props.sources, props.onSaved, props.onNotice, "Manually skipped page from execution queue")}>跳过</button>
+                      <button className="ghostButton tiny" onClick={() => void keepPage(page, props.sources, props.onSaved, props.onNotice, "Manually kept page from execution queue")}>{t("保留")}</button>
+                      <button className="ghostButton tiny" onClick={() => void skipPageUrl(page.pageUrl, props.sources, props.onSaved, props.onNotice, "Manually skipped page from execution queue")}>{t("跳过")}</button>
                     </div>
-                  )) : <p className="empty">这个域名还没有页面机会。</p>}
+                  )) : <p className="empty">{activeUiLanguage === "en" ? "This domain has no page opportunities yet." : "这个域名还没有页面机会。"}</p>}
               </div>
               )}
             </article>
           );
         })}
-        {!actionable.length && <p className="empty">当前没有可执行候选资源；可先到资源池自动预检测一批。</p>}
+        {!actionable.length && <p className="empty">{activeUiLanguage === "en" ? "No execution candidates right now. Run resource precheck from the pool first." : "当前没有可执行候选资源；可先到资源池自动预检测一批。"}</p>}
       </div>
     </section>
   );
@@ -1034,40 +1044,40 @@ function DiscoveryTargetPanel({
   return (
     <section className="section discoverySection">
       <div className="sectionHeader">
-        <h2>待拓展网站</h2>
+        <h2>{t("待拓展网站")}</h2>
         <span>
-          待拓展 {expandableTargets.length} · 待补数据 {missingDataTargets.length} · 失败 {failedTargets.length} · 已完成 {completedCount}
+          {t("待拓展")} {expandableTargets.length} · {t("待补数据")} {missingDataTargets.length} · {t("失败")} {failedTargets.length} · {t("已完成")} {completedCount}
         </span>
         <div className="sourceActions">
-          <button className="ghostButton tiny" onClick={() => void expandNext("ahrefs")}>拓展下个域名外链 Ahrefs</button>
-          <button className="ghostButton tiny" onClick={() => void expandNext("semrush")}>拓展下个域名外链 Semrush</button>
+          <button className="ghostButton tiny" onClick={() => void expandNext("ahrefs")}>{t("拓展下个域名外链 Ahrefs")}</button>
+          <button className="ghostButton tiny" onClick={() => void expandNext("semrush")}>{t("拓展下个域名外链 Semrush")}</button>
         </div>
       </div>
-      <p className="sectionHint">这里仅展示还需要操作的网站；完整记录在 Google Sheets 的 discovery_targets。默认按“新站机会”排序：DR、流量、引用域高且域名年龄短的网站优先。</p>
+      <p className="sectionHint">{activeUiLanguage === "en" ? "Shows only domains that still need action. Full records are in the Google Sheets discovery_targets sheet. Default sorting prioritizes newer high-quality opportunities." : "这里仅展示还需要操作的网站；完整记录在 Google Sheets 的 discovery_targets。默认按“新站机会”排序：DR、流量、引用域高且域名年龄短的网站优先。"}</p>
       <div className="discoveryToolbar">
         <div className="classSummary discoveryTabs">
-          <button className={filter === "expand" ? "active" : ""} onClick={() => setFilter("expand")}>待拓展 {expandableTargets.length}</button>
-          <button className={filter === "missing" ? "active" : ""} onClick={() => setFilter("missing")}>待补数据 {missingDataTargets.length}</button>
-          <button className={filter === "failed" ? "active" : ""} onClick={() => setFilter("failed")}>失败重试 {failedTargets.length}</button>
+          <button className={filter === "expand" ? "active" : ""} onClick={() => setFilter("expand")}>{t("待拓展")} {expandableTargets.length}</button>
+          <button className={filter === "missing" ? "active" : ""} onClick={() => setFilter("missing")}>{t("待补数据")} {missingDataTargets.length}</button>
+          <button className={filter === "failed" ? "active" : ""} onClick={() => setFilter("failed")}>{t("失败重试")} {failedTargets.length}</button>
         </div>
         <div className="filterCluster">
           <span>{filteredTargets.length ? `${(currentPage - 1) * pageSize + 1}-${(currentPage - 1) * pageSize + visible.length} / ${filteredTargets.length}` : "0 / 0"}</span>
           <select value={sortMode} onChange={(event) => setSortMode(event.target.value as DiscoverySortMode)}>
-            <option value="new_opportunity">新站机会</option>
-            <option value="quality">高质量优先</option>
-            <option value="occurrence">出现次数</option>
-            <option value="recent">最近发现</option>
+            <option value="new_opportunity">{t("新站机会")}</option>
+            <option value="quality">{t("高质量优先")}</option>
+            <option value="occurrence">{t("出现次数")}</option>
+            <option value="recent">{t("最近发现")}</option>
           </select>
           <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>
-            <option value={10}>每页 10</option>
-            <option value={20}>每页 20</option>
-            <option value={50}>每页 50</option>
+            <option value={10}>{t("每页 10")}</option>
+            <option value={20}>{t("每页 20")}</option>
+            <option value={50}>{t("每页 50")}</option>
           </select>
         </div>
       </div>
       {!visible.length && (
         <p className="empty">
-          {filter === "expand" ? "当前没有待拓展网站；可以从执行页分析外链页，或手动输入竞品域名。" : "当前分组没有记录。"}
+          {activeUiLanguage === "en" ? (filter === "expand" ? "No domains to expand right now. Analyze backlink pages from Execute, or enter a competitor domain manually." : "No records in this group.") : (filter === "expand" ? "当前没有待拓展网站；可以从执行页分析外链页，或手动输入竞品域名。" : "当前分组没有记录。")}
         </p>
       )}
       <div className="sourceList compact">
@@ -1080,19 +1090,19 @@ function DiscoveryTargetPanel({
                 <span>{target.sourcePageUrl || sourceLabelForDiscovery(target)}</span>
               </div>
               <div className="sourceMeta">
-                <span>{discoveryStatusLabel(target)}</span>
-                <span>{discoveryScoreLabel(sortMode)} {Math.round(discoveryTargetScore(target, sortMode))}</span>
+                <span>{t(discoveryStatusLabel(target))}</span>
+                <span>{t(discoveryScoreLabel(sortMode))} {Math.round(discoveryTargetScore(target, sortMode))}</span>
                 <span>DR {formatOptionalNumber(target.dr)}</span>
-                <span>流量 {formatOptionalNumber(target.traffic)}</span>
-                <span>引用域 {formatOptionalNumber(target.refDomains)}</span>
-                <span>年龄 {formatDomainAge(target)}</span>
-                <span>出现 {target.occurrenceCount}</span>
-                <span>来源 {target.seenSourceRootDomains?.length || target.discoveredOnPages?.length || 1}</span>
+                <span>{activeUiLanguage === "en" ? "Traffic" : "流量"} {formatOptionalNumber(target.traffic)}</span>
+                <span>{activeUiLanguage === "en" ? "Ref domains" : "引用域"} {formatOptionalNumber(target.refDomains)}</span>
+                <span>{activeUiLanguage === "en" ? "Age" : "年龄"} {formatDomainAge(target)}</span>
+                <span>{activeUiLanguage === "en" ? "Seen" : "出现"} {target.occurrenceCount}</span>
+                <span>{activeUiLanguage === "en" ? "Sources" : "来源"} {target.seenSourceRootDomains?.length || target.discoveredOnPages?.length || 1}</span>
               </div>
               <div className="sourceActions">
                 <button className="ghostButton tiny" onClick={() => void queueAndOpenDiscoveryTarget(target, "ahrefs", onRefresh)}>Ahrefs</button>
                 <button className="ghostButton tiny" onClick={() => void queueAndOpenDiscoveryTarget(target, "semrush", onRefresh)}>Semrush</button>
-                <button className="ghostButton tiny danger" onClick={() => void ignoreTarget(target)}>忽略</button>
+                <button className="ghostButton tiny danger" onClick={() => void ignoreTarget(target)}>{t("忽略")}</button>
               </div>
             </div>
           </article>
@@ -1100,13 +1110,13 @@ function DiscoveryTargetPanel({
       </div>
       {filteredTargets.length > pageSize && (
         <div className="toolbar">
-          <button className="ghostButton" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>上一页</button>
-          <span>第 {currentPage} / {totalPages} 页</span>
-          <button className="ghostButton" disabled={currentPage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>下一页</button>
+          <button className="ghostButton" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>{t("上一页")}</button>
+          <span>{t("第")} {currentPage} / {totalPages}</span>
+          <button className="ghostButton" disabled={currentPage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>{t("下一页")}</button>
         </div>
       )}
       {(completedCount > 0 || ignoredCount > 0) && (
-        <p className="sectionHint">已完成 {completedCount} 个、已忽略 {ignoredCount} 个默认隐藏，可在 Google Sheets 查看完整记录。</p>
+        <p className="sectionHint">{activeUiLanguage === "en" ? `${completedCount} completed and ${ignoredCount} ignored records are hidden by default. See Google Sheets for the full record.` : `已完成 ${completedCount} 个、已忽略 ${ignoredCount} 个默认隐藏，可在 Google Sheets 查看完整记录。`}</p>
       )}
     </section>
   );
@@ -1290,15 +1300,15 @@ function PendingSubmissionList({
   return (
     <section className="section">
       <div className="sectionHeader">
-        <h2>待查发布记录</h2>
-        <span>{validCount} 条</span>
+        <h2>{t("待查发布记录")}</h2>
+        <span>{validCount} {t("条")}</span>
       </div>
-      <p className="sectionHint">这里是已模拟填表、已提交或待复查但还没确认上线的记录。打开页面后，人工确认评论已提交，再点“检查结果”。</p>
+      <p className="sectionHint">{activeUiLanguage === "en" ? "These are filled, submitted, or review records that are not confirmed live yet. Open the page, confirm manually, then click Check Result." : "这里是已模拟填表、已提交或待复查但还没确认上线的记录。打开页面后，人工确认评论已提交，再点“检查结果”。"}</p>
       <div className="sourceList compact">
         {visible.map((submission) => (
           <article className="sourceCard" key={submission.id}>
             <div className="sourceRow">
-              <div className="priority pC">待</div>
+              <div className="priority pC">{activeUiLanguage === "en" ? "P" : "待"}</div>
               <div className="sourceMain">
                 <strong>{submission.targetDomain || rootDomainFromUrl(submission.submittedUrl || submission.targetUrl)}</strong>
                 <span>{submission.submittedUrl || submission.targetUrl}</span>
@@ -1306,11 +1316,11 @@ function PendingSubmissionList({
               <div className="sourceMeta">
                 <span>{submission.status}</span>
                 <span>{submission.rel}</span>
-                <span>{submission.checkedAt ? new Date(submission.checkedAt).toLocaleString() : "未检查"}</span>
+                <span>{submission.checkedAt ? new Date(submission.checkedAt).toLocaleString() : t("未检查")}</span>
               </div>
               <div className="sourceActions">
-                <button className="ghostButton tiny" onClick={() => openUrl(submission.submittedUrl || submission.targetUrl, true)}>打开</button>
-                <button className="ghostButton tiny danger" onClick={() => void rejectSubmission(submission, onSaved, onNotice)}>未通过</button>
+                <button className="ghostButton tiny" onClick={() => openUrl(submission.submittedUrl || submission.targetUrl, true)}>{t("打开")}</button>
+                <button className="ghostButton tiny danger" onClick={() => void rejectSubmission(submission, onSaved, onNotice)}>{t("未通过")}</button>
               </div>
             </div>
           </article>
@@ -1835,7 +1845,7 @@ function ExecutePanel(props: {
     <section className="panelStack">
       <section className="section">
         <div className="sectionHeader">
-          <h2>项目执行台</h2>
+          <h2>{t("项目执行台")}</h2>
           <select value={props.selectedProject?.id ?? ""} onChange={(event) => props.setSelectedProjectId(event.target.value)}>
             {props.projects.map((project) => (
               <option value={project.id} key={project.id}>{project.projectName || project.brandName}</option>
@@ -1849,21 +1859,21 @@ function ExecutePanel(props: {
           <Metric icon={<MousePointerClick size={20} />} label="今日处理域名" value={todayProcessedDomains} />
           <Metric icon={<Sparkles size={20} />} label="待查/上线记录" value={`${projectPendingRecords.length}/${projectLiveSubmissions}`} />
         </div>
-        <p className="sectionHint">执行队列以域名推进，每个域名默认打开最优子页面；全量人工队列包含待二检和可执行，也可以切到只跑可执行候选。</p>
+        <p className="sectionHint">{activeUiLanguage === "en" ? "The execution queue advances by domain and opens the best page by default. Full review includes second-review and actionable items; actionable-only limits the queue to confirmed candidates." : "执行队列以域名推进，每个域名默认打开最优子页面；全量人工队列包含待二检和可执行，也可以切到只跑可执行候选。"}</p>
         <div className="classSummary">
           <button
             type="button"
             className={executionQueueMode === "full_review" ? "active" : ""}
             onClick={() => setExecutionQueueMode("full_review")}
           >
-            全量人工队列 {fullReviewCount}
+            {t("全量人工队列")} {fullReviewCount}
           </button>
           <button
             type="button"
             className={executionQueueMode === "actionable_only" ? "active" : ""}
             onClick={() => setExecutionQueueMode("actionable_only")}
           >
-            只跑可执行 {actionableOnlyCount}
+            {t("只跑可执行")} {actionableOnlyCount}
           </button>
         </div>
         <div className="classSummary">
@@ -1874,81 +1884,81 @@ function ExecutePanel(props: {
               key={item.filter}
               onClick={() => setExecutionFilter(item.filter)}
             >
-              {item.label} {item.count}
+              {t(item.label)} {item.count}
             </button>
           ))}
         </div>
         <div className="executionFlow">
           <div className="flowBlock primaryFlow">
-            <span>任务入口</span>
+            <span>{t("任务入口")}</span>
             <div className="toolbar compactToolbar">
               <button className="primaryButton" onClick={() => void autoCheckNext()}>
-                <Activity size={16} /> 开始下一条
+                <Activity size={16} /> {t("开始下一条")}
               </button>
             </div>
-            <small>{executionQueueMode === "full_review" ? "打开全量人工队列第一条；待二检项会停留给人工判断，不能用就跳过，能用就生成文案/填表。" : "只打开机器已确认可执行的候选，适合后续更自动化的执行流程。"}</small>
-            {executionFilter !== "all" && <small>当前只执行：{executionFilterLabel(executionFilter)}。</small>}
+            <small>{activeUiLanguage === "en" ? (executionQueueMode === "full_review" ? "Open the first item in the full manual queue; review items stop for human judgment." : "Only open machine-confirmed actionable candidates.") : (executionQueueMode === "full_review" ? "打开全量人工队列第一条；待二检项会停留给人工判断，不能用就跳过，能用就生成文案/填表。" : "只打开机器已确认可执行的候选，适合后续更自动化的执行流程。")}</small>
+            {executionFilter !== "all" && <small>{activeUiLanguage === "en" ? "Current filter: " : "当前只执行："}{t(executionFilterLabel(executionFilter))}。</small>}
           </div>
           <div className="flowBlock">
-            <span>当前页判定</span>
+            <span>{t("当前页判定")}</span>
             <div className="toolbar compactToolbar">
               <button className="ghostButton" onClick={() => void analyzeActivePage()}>
-                <Radar size={16} /> 重新分析
+                <Radar size={16} /> {t("重新分析")}
               </button>
               <button className="ghostButton" onClick={() => void captureActivePageDiscovery(250)}>
-                <Activity size={16} /> 抓取竞品网站
+                <Activity size={16} /> {t("抓取竞品网站")}
               </button>
               <button className="ghostButton" onClick={() => void captureActivePageDiscovery(1000)}>
-                <Radar size={16} /> 深度抓取
+                <Radar size={16} /> {t("深度抓取")}
               </button>
               <button className="ghostButton" onClick={() => void keepActivePage()}>
-                保留页面
+                {t("保留页面")}
               </button>
               <button className="ghostButton" onClick={() => void keepActiveDomain()}>
-                保留域名
+                {t("保留域名")}
               </button>
               <button className="ghostButton" onClick={() => void markActiveProjectPendingReview()}>
-                本项目待复查/下一条
+                {t("本项目待复查/下一条")}
               </button>
               <button className="ghostButton danger" onClick={() => void skipActivePage()}>
-                跳过页面
+                {t("跳过页面")}
               </button>
               <button className="ghostButton danger" onClick={() => void skipActiveDomain()}>
-                跳过域名
+                {t("跳过域名")}
               </button>
             </div>
-            <small>页面加载完成、滚动到底部、注册/登录后字段变化时，再点重新分析。</small>
+            <small>{activeUiLanguage === "en" ? "After the page loads, scrolling, registration, login, or field changes, run analysis again." : "页面加载完成、滚动到底部、注册/登录后字段变化时，再点重新分析。"}</small>
             {decisionNotice && <div className="inlineNotice">{decisionNotice}</div>}
           </div>
           <div className="flowBlock">
-            <span>发布动作 · {activeStrategy.label}</span>
+            <span>{t("发布动作")} · {t(activeStrategy.label)}</span>
             <div className="toolbar compactToolbar">
               <button className="ghostButton" onClick={() => void generateNaturalComment()}>
-                <Sparkles size={16} /> {activeStrategy.generateLabel}
+                <Sparkles size={16} /> {t(activeStrategy.generateLabel)}
               </button>
               <button className="ghostButton" disabled={translatingComment} onClick={() => void translateCommentToEnglish()}>
-                <Globe2 size={16} /> {translatingComment ? "翻译中" : "翻译成英文"}
+                <Globe2 size={16} /> {t(translatingComment ? "翻译中" : "翻译成英文")}
               </button>
               <button className="primaryButton warm" onClick={() => void fillActivePage()}>
-                <Wand2 size={16} /> {activeStrategy.fillLabel}
+                <Wand2 size={16} /> {t(activeStrategy.fillLabel)}
               </button>
               <button className="ghostButton" onClick={() => void verifyActivePage()}>
-                <ClipboardCheck size={16} /> 检查结果
+                <ClipboardCheck size={16} /> {t("检查结果")}
               </button>
             </div>
-            <small>{activeStrategy.hint}</small>
+            <small>{t(activeStrategy.hint)}</small>
             {publishNotice && <div className="inlineNotice">{publishNotice}</div>}
           </div>
         </div>
         {autoScreenState?.message && (
           <p className="sectionHint">
-            后台状态：{autoScreenState.message}
+            {t("后台状态：")}{autoScreenState.message}
             {autoScreenState.running ? ` · 已检查 ${autoScreenState.checked} · 已跳过 ${autoScreenState.skipped}` : ""}
           </p>
         )}
         {activeRootDomain && (
           <div className="currentPageBox">
-            <span>当前页：{activeRootDomain}</span>
+            <span>{t("当前页：")}{activeRootDomain}</span>
             <strong>{activeSources.length ? `匹配 ${activeSources.length} 条资源` : "资源池暂无匹配，仍可跳过当前域名"}</strong>
             {activeSources.slice(0, 2).map((source) => (
               <small key={source.id}>{source.sourceDomain || source.rootDomain} · {source.status} · {sourceDisplayOpportunity(source, props.pages).label}</small>
@@ -1956,18 +1966,18 @@ function ExecutePanel(props: {
           </div>
         )}
         <label className="stackedField">
-          <span>评论/说明文本，可留空自动生成</span>
+          <span>{t("评论/说明文本，可留空自动生成")}</span>
           {publishNotice && <small className="fieldNotice">{publishNotice}</small>}
-          <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={4} placeholder="写入要填到评论框或说明字段里的内容。" />
+          <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={4} placeholder={t("写入要填到评论框或说明字段里的内容。")} />
         </label>
         <label className="stackedField">
-          <span>评论链接方式</span>
+          <span>{t("评论链接方式")}</span>
           <select value={commentLinkMode} onChange={(event) => setCommentLinkMode(event.target.value as typeof commentLinkMode)}>
-            <option value="auto_recommend">自动判断推荐</option>
-            <option value="none">不在评论里放链接</option>
-            <option value="website_field">只填 Website/URL 字段</option>
-            <option value="body_html_anchor">正文 HTML 锚文本（人工确认）</option>
-            <option value="body_bbcode_link">正文 BBCode 链接（论坛/Profile）</option>
+            <option value="auto_recommend">{t("自动判断推荐")}</option>
+            <option value="none">{t("不在评论里放链接")}</option>
+            <option value="website_field">{t("只填 Website/URL 字段")}</option>
+            <option value="body_html_anchor">{t("正文 HTML 锚文本（人工确认）")}</option>
+            <option value="body_bbcode_link">{t("正文 BBCode 链接（论坛/Profile）")}</option>
           </select>
           <small>博客评论默认优先试 HTML 锚文本；Profile 默认生成自然简介加裸链，也可切换 HTML 或 BBCode 链接重试。提交后点“检查发布结果”。</small>
         </label>
@@ -1986,7 +1996,7 @@ function ExecutePanel(props: {
       />
       <PendingSubmissionList submissions={projectPendingRecords} onSaved={props.onSaved} onNotice={props.onNotice} />
       <section className="section">
-        <h2>页面分析结果</h2>
+        <h2>{t("页面分析结果")}</h2>
         {props.analysis ? (
           <>
             <div className="analysisGrid">
@@ -2012,21 +2022,29 @@ function ExecutePanel(props: {
             </div>
             {discoveredDomainsFromAnalysis(props.analysis).length > 0 && (
               <div className="currentPageBox">
-                <span>本页发现的外链域名</span>
+                <span>{t("本页发现的外链域名")}</span>
                 <strong>{discoveredDomainsFromAnalysis(props.analysis).slice(0, 8).join(" · ")}</strong>
           <small>已写入待拓展网站；注册时间会自动补，DR/流量/引用域需打开 Ahrefs/Semrush 并导入或等待结果捕获后补齐。</small>
               </div>
             )}
           </>
         ) : (
-          <p className="empty">打开目标页面后点击分析。</p>
+          <p className="empty">{t("打开目标页面后点击分析。")}</p>
         )}
       </section>
     </section>
   );
 }
 
-function SettingsPanel({ onSaved }: { onSaved: () => void }) {
+function SettingsPanel({
+  uiLanguage,
+  onLanguageChange,
+  onSaved
+}: {
+  uiLanguage: UiLanguage;
+  onLanguageChange: (language: UiLanguage) => void;
+  onSaved: () => void;
+}) {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [syncingSheets, setSyncingSheets] = useState(false);
   const [restoringSheets, setRestoringSheets] = useState(false);
@@ -2039,6 +2057,16 @@ function SettingsPanel({ onSaved }: { onSaved: () => void }) {
   async function save() {
     if (!settings) return;
     await saveSettings(settings);
+    onLanguageChange(settings.uiLanguage);
+  }
+
+  async function updateUiLanguage(language: UiLanguage) {
+    if (!settings) return;
+    const nextSettings = { ...settings, uiLanguage: language };
+    activeUiLanguage = language;
+    setSettings(nextSettings);
+    onLanguageChange(language);
+    await saveSettings(nextSettings);
   }
 
   async function syncSheets() {
@@ -2115,7 +2143,7 @@ function SettingsPanel({ onSaved }: { onSaved: () => void }) {
   if (!settings) {
     return (
       <section className="section">
-        <p className="empty">正在加载设置。</p>
+        <p className="empty">{t("正在加载设置。")}</p>
       </section>
     );
   }
@@ -2123,10 +2151,18 @@ function SettingsPanel({ onSaved }: { onSaved: () => void }) {
   return (
     <section className="section">
       <div className="sectionHeader">
-        <h2>同步与 AI</h2>
-        <button className="primaryButton" onClick={() => void save()}>保存设置</button>
+        <h2>{t("同步与 AI")}</h2>
+        <button className="primaryButton" onClick={() => void save()}>{t("保存设置")}</button>
       </div>
       <div className="formGrid syncGrid">
+        <label className="stackedField">
+          <span>{t("UI 语言")}</span>
+          <select value={settings.uiLanguage || uiLanguage} onChange={(event) => void updateUiLanguage(event.target.value as UiLanguage)}>
+            <option value="zh-CN">{t("中文")}</option>
+            <option value="en">{t("English")}</option>
+          </select>
+          <small>{t("界面语言会保存在本机扩展设置中。")}</small>
+        </label>
         <Field
           wide
           label="Google Sheets ID / 链接"
@@ -2142,15 +2178,15 @@ function SettingsPanel({ onSaved }: { onSaved: () => void }) {
           onChange={(value) => setSettings({ ...settings, googleOAuthClientId: value })}
         />
         <label className="stackedField">
-          <span>自动同步</span>
+          <span>{t("自动同步")}</span>
           <select
             value={settings.googleSheetsAutoSyncEnabled ? "on" : "off"}
             onChange={(event) => setSettings({ ...settings, googleSheetsAutoSyncEnabled: event.target.value === "on" })}
           >
-            <option value="on">开启</option>
-            <option value="off">关闭</option>
+            <option value="on">{t("开启")}</option>
+            <option value="off">{t("关闭")}</option>
           </select>
-          <small>后台静默同步，不再占用执行页状态提示；如果授权缓存失效，会等你下一次手动同步。</small>
+          <small>{t("后台静默同步，不再占用执行页状态提示；如果授权缓存失效，会等你下一次手动同步。")}</small>
         </label>
         <Field
           label="变更阈值"
@@ -2168,44 +2204,44 @@ function SettingsPanel({ onSaved }: { onSaved: () => void }) {
         <div className="syncActions">
           <button className="primaryButton" disabled={syncingSheets || restoringSheets} onClick={() => void syncSheets()}>
             <FileUp size={15} />
-            {syncingSheets ? "同步中" : "同步到 Google Sheets"}
+            {t(syncingSheets ? "同步中" : "同步到 Google Sheets")}
           </button>
           <button className="ghostButton" disabled={syncingSheets || restoringSheets} onClick={() => void restoreFromSheets()}>
             <FileDown size={15} />
-            {restoringSheets ? "恢复中" : "从 Google Sheets 恢复"}
+            {t(restoringSheets ? "恢复中" : "从 Google Sheets 恢复")}
           </button>
           {settings.googleSheetsId && (
             <button className="ghostButton" onClick={() => openUrl(`https://docs.google.com/spreadsheets/d/${extractSpreadsheetId(settings.googleSheetsId)}/edit`)}>
               <ArrowUpRight size={15} />
-              打开表格
+              {t("打开表格")}
             </button>
           )}
         </div>
         {syncNotice && <div className="notice wideNotice">{syncNotice}</div>}
         {settings.lastGoogleSheetsSyncAt && (
           <p className="sectionHint syncMeta">
-            最近同步：{settings.lastGoogleSheetsSyncDirection === "pull" ? "表格恢复到本地" : "本地推送到表格"} · {new Date(settings.lastGoogleSheetsSyncAt).toLocaleString()}
+            {t("最近同步：")}{t(settings.lastGoogleSheetsSyncDirection === "pull" ? "表格恢复到本地" : "本地推送到表格")} · {new Date(settings.lastGoogleSheetsSyncAt).toLocaleString()}
           </p>
         )}
       </div>
       <div className="formGrid">
         <label className="stackedField">
-          <span>AI 服务商</span>
+          <span>{t("AI 服务商")}</span>
           <select value={settings.aiProvider} onChange={(event) => setSettings({ ...settings, aiProvider: event.target.value as AppSettings["aiProvider"] })}>
-            <option value="none">不使用 AI</option>
+            <option value="none">{t("不使用 AI")}</option>
             <option value="openai">OpenAI</option>
             <option value="openrouter">OpenRouter</option>
             <option value="deepseek">DeepSeek</option>
             <option value="gemini">Gemini</option>
           </select>
-          <small>当前只用于“生成自然评论”，页面分析仍走本地规则。</small>
+          <small>{t("当前只用于“生成自然评论”，页面分析仍走本地规则。")}</small>
         </label>
         <Field label="模型" help="例如填你服务商支持的模型名；插件不强制默认模型。" value={settings.aiModel} onChange={(value) => setSettings({ ...settings, aiModel: value })} />
         <Field wide type="password" label="API Key" help="保存在本机扩展 IndexedDB，不会上传到我们的服务器。" value={settings.aiApiKey} onChange={(value) => setSettings({ ...settings, aiApiKey: value })} />
       </div>
       <div className="callout">
         <Sparkles size={18} />
-        <span>推荐先用轻量 AI 生成草稿，人检查后再模拟填表，最后人工提交。</span>
+        <span>{t("推荐先用轻量 AI 生成草稿，人检查后再模拟填表，最后人工提交。")}</span>
       </div>
     </section>
   );
@@ -2230,13 +2266,13 @@ function Field({
 }) {
   return (
     <label className={wide ? "stackedField wide" : "stackedField"}>
-      <span>{label}</span>
+      <span>{t(label)}</span>
       {multiline ? (
         <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} />
       ) : (
         <input type={type} value={value} onChange={(event) => onChange(event.target.value)} />
       )}
-      {help && <small>{help}</small>}
+      {help && <small>{t(help)}</small>}
     </label>
   );
 }
@@ -2244,8 +2280,8 @@ function Field({
 function Badge({ label, value }: { label: string; value: string }) {
   return (
     <div className="badge">
-      <span>{label}</span>
-      <strong>{value}</strong>
+      <span>{t(label)}</span>
+      <strong>{t(value)}</strong>
     </div>
   );
 }

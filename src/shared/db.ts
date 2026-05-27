@@ -511,6 +511,7 @@ export async function getSettings(): Promise<AppSettings> {
   const existing = await db.get("settings", "settings");
   const defaults: AppSettings = {
     id: "settings",
+    uiLanguage: "zh-CN",
     aiProvider: "none",
     aiApiKey: "",
     aiModel: "",
