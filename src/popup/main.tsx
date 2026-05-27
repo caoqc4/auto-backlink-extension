@@ -1348,6 +1348,7 @@ function ExecutePanel(props: {
   onSaved: () => void;
 }) {
   const [comment, setComment] = useState("");
+  const [translatingComment, setTranslatingComment] = useState(false);
   const [commentLinkMode, setCommentLinkMode] = useState<CommentLinkMode>("auto_recommend");
   const [decisionNotice, setDecisionNotice] = useState("");
   const [publishNotice, setPublishNotice] = useState("");
@@ -1727,6 +1728,50 @@ function ExecutePanel(props: {
     }
   }
 
+  async function translateCommentToEnglish() {
+    if (!props.selectedProject) {
+      props.onNotice("请先创建并选择项目");
+      return;
+    }
+    const sourceText = comment.trim();
+    if (!sourceText) {
+      const message = "请先输入或生成要翻译的文案";
+      setPublishNotice(message);
+      props.onNotice(message);
+      return;
+    }
+    try {
+      const settings = await getSettings();
+      if (settings.aiProvider === "none" || !settings.aiApiKey || !settings.aiModel) {
+        const message = "请先在设置里配置 AI 服务商、API Key 和模型";
+        setPublishNotice(message);
+        props.onNotice(message);
+        return;
+      }
+      setTranslatingComment(true);
+      let context: PageContext | null = null;
+      const tab = await getActiveTab();
+      if (tab.id) {
+        try {
+          context = await sendTabMessage<PageContext>(tab.id, { type: "EXTRACT_PAGE_CONTEXT_V2" }, { forceInject: true });
+        } catch {
+          context = null;
+        }
+      }
+      const translated = await translateDraftToEnglish(settings, props.selectedProject, props.analysis, context, sourceText, commentLinkMode);
+      setComment(translated);
+      const message = "已翻译成英文，请人工检查语气、链接和平台规则后再模拟填表。";
+      setPublishNotice(message);
+      props.onNotice(message);
+    } catch (error) {
+      const message = errorMessage(error);
+      setPublishNotice(message);
+      props.onNotice(message);
+    } finally {
+      setTranslatingComment(false);
+    }
+  }
+
   async function verifyActivePage() {
     if (!props.selectedProject?.siteUrl) {
       props.onNotice("请先创建并选择项目，且项目里要有网站 URL");
@@ -1880,6 +1925,9 @@ function ExecutePanel(props: {
             <div className="toolbar compactToolbar">
               <button className="ghostButton" onClick={() => void generateNaturalComment()}>
                 <Sparkles size={16} /> {activeStrategy.generateLabel}
+              </button>
+              <button className="ghostButton" disabled={translatingComment} onClick={() => void translateCommentToEnglish()}>
+                <Globe2 size={16} /> {translatingComment ? "翻译中" : "翻译成英文"}
               </button>
               <button className="primaryButton warm" onClick={() => void fillActivePage()}>
                 <Wand2 size={16} /> {activeStrategy.fillLabel}
@@ -3632,6 +3680,27 @@ async function generateCommentWithAi(
   };
 }
 
+async function translateDraftToEnglish(
+  settings: AppSettings,
+  project: Project,
+  analysis: PageAnalysis | null,
+  context: PageContext | null,
+  sourceText: string,
+  commentLinkMode: CommentLinkMode
+) {
+  const linkPlan = commentLinkPlan(project, analysis, commentLinkMode);
+  const publishType = executionPublishType(analysis);
+  const prompt = buildEnglishTranslationPrompt(project, analysis, context, sourceText, linkPlan, publishType);
+  const content = settings.aiProvider === "gemini"
+    ? await callGemini(settings, prompt)
+    : await callOpenAiCompatible(settings, prompt);
+  const cleaned = cleanAiComment(content
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/^(TRANSLATION|Translation|translation|English|Output):\s*/gim, "")
+  , publishType === "forum_thread");
+  return enforceLinkPlan(cleaned || sourceText, linkPlan);
+}
+
 interface CommentLinkPlan {
   mode: "none" | "website_field" | "body_html_anchor" | "body_bbcode_link" | "plain_url";
   label: string;
@@ -4039,6 +4108,51 @@ function buildCommentPrompt(project: Project, analysis: PageAnalysis | null, con
     "",
     "Competitor/backlink clue:",
     competitorSummary
+  ].join("\n");
+}
+
+function buildEnglishTranslationPrompt(
+  project: Project,
+  analysis: PageAnalysis | null,
+  context: PageContext | null,
+  sourceText: string,
+  linkPlan: CommentLinkPlan,
+  publishType: ExecutionPublishType
+) {
+  const brand = project.brandName || project.projectName || rootDomainFromUrl(project.siteUrl || "") || "the project";
+  const pageContext = context ? [
+    `Target page URL: ${context.url}`,
+    `Target page title: ${context.title}`,
+    `Visible topic excerpt: ${context.visibleText || "none"}`
+  ].join("\n") : "Target page context: not available";
+  const linkRule = {
+    none: "Remove URLs, HTML anchors, BBCode links, and promotional CTAs from the English output.",
+    website_field: "Do not include any URL, domain, HTML anchor, or BBCode link. The extension will fill the Website/URL field separately.",
+    plain_url: `Use only this plain URL if a URL is already needed by the source text: ${linkPlan.url}`,
+    body_html_anchor: `Preserve exactly one HTML link if the source text uses a body link. The only allowed link markup is: <a href="${linkPlan.url}\\n">${escapePromptText(linkPlan.anchor)}</a>`,
+    body_bbcode_link: `Preserve exactly one BBCode link if the source text uses a body link. The only allowed link markup is: [url=${linkPlan.url}]${escapePromptText(linkPlan.anchor)}[/url]`
+  }[linkPlan.mode];
+  const shapeRule = publishType === "forum_thread"
+    ? "Keep paragraph breaks when useful. Output a forum post body only."
+    : "Output one compact comment/profile/submission text only.";
+
+  return [
+    "Translate and lightly localize the draft into natural English for manual review before posting.",
+    "Keep the original intent, but make it sound human, low-key, and context-aware rather than like outreach copy.",
+    "Do not mention translation, AI, SEO, backlinks, marketing, promotion, or outreach.",
+    "Do not add explanations, labels, Markdown, or quotes around the result.",
+    "Avoid generic praise such as 'great post', 'thanks for sharing', or 'very informative'.",
+    shapeRule,
+    linkRule,
+    "",
+    `Project/brand: ${brand}`,
+    `Project category: ${project.category || "not provided"}`,
+    `Project summary: ${project.shortDescription || project.longDescription || "not provided"}`,
+    `Detected publish type: ${publishType}`,
+    pageContext,
+    "",
+    "Draft to translate:",
+    sourceText
   ].join("\n");
 }
 
